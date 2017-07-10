@@ -11,6 +11,15 @@ describe Owners do
         @org/team
         @focused *.md
       EOF
+
+      @comments = Owners::File.new(<<-EOF)
+        # README
+        @owner1 file1.txt
+        # C,O;M"M'E:N@T$
+        @owner2 file2.txt
+        # @notcorrectowner file3.txt
+        @owner3 file3.txt
+      EOF
     end
 
     it "returns all users without a path specified" do
@@ -36,15 +45,19 @@ describe Owners do
     end
 
     it "ignores comments and newlines" do
-      assert_equal ["@owner"], Owners::File.new("# README\n\n\n@owner").for("README")
-    end
-
-    it "ignores tokens after comment mark" do
-      assert_equal [], Owners::File.new("# @owner").for("README")
+      assert_equal ["@owner1"], @comments.for("file1.txt")
     end
 
     it "ignores comments containing special characters" do
-      assert_equal ["@owner"], Owners::File.new("# R,E;A.D'M/E:\n\n@owner").for("README")
+      assert_equal ["@owner2"], @comments.for("file2.txt")
+    end
+
+    it "ignores tokens after comment mark" do
+      assert_equal ["@owner3"], @comments.for("file3.txt")
+    end
+
+    it "does not accept newlines as whitespace in comments" do
+      assert_equal ["@team"], Owners::File.new("#\n@team").for("README") 
     end
   end
 end
